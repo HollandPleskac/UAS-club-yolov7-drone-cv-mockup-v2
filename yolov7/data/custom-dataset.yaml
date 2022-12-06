@@ -1,0 +1,8 @@
+train: ./data/images  
+val: ./data/images  
+
+# number of classes
+nc: 1
+
+# class names
+names: [ 'zone 1' ]
