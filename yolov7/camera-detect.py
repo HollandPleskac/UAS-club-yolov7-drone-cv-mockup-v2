@@ -16,6 +16,39 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
 
+def displayArrows(xmin, ymin, xmax, ymax, center_x, center_y, screen_center_x, screen_center_y, width, height, show_img):
+    # Variables for Text
+    text = "Need to move up"
+    coordinates = (100, height-100)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    fontScale = 4
+    color = (255, 0, 0)
+    thickness = 10
+
+    if (xmax-xmin) * (ymax-ymin) > 200*200:
+        show_img = cv2.putText(show_img, text, coordinates,
+                               font, fontScale, color, thickness, cv2.LINE_AA)
+    else:
+        # Display Arrows
+        if (xmin < screen_center_x - 100):
+            cv2.arrowedLine(show_img, (width-150, screen_center_y),
+                            (width-50, screen_center_y), (0, 255, 0), 30, tipLength=0.5)
+        elif (xmax > screen_center_x+100):
+            cv2.arrowedLine(show_img, (150, screen_center_y),
+                            (50, screen_center_y), (0, 255, 0), 30, tipLength=0.5)
+        else:
+            cv2.circle(show_img, (center_x, center_y), 15, (0, 255, 0), -1)
+
+        if (ymin < screen_center_y - 100):
+            cv2.arrowedLine(show_img, (screen_center_x, height-150),
+                            (screen_center_x, height-50), (0, 255, 0), 30, tipLength=0.5)
+        elif (ymax > screen_center_y+100):
+            cv2.arrowedLine(show_img, (screen_center_x, 150),
+                            (screen_center_x, 50), (0, 255, 0), 30, tipLength=0.5)
+        else:
+            cv2.circle(show_img, (center_x, center_y), 15, (0, 255, 0), -1)
+
+
 def detect(source, weights, device, img_size, iou_thres, conf_thres):
 
     webcam = source.isnumeric()
@@ -76,6 +109,16 @@ def detect(source, weights, device, img_size, iou_thres, conf_thres):
         pred = non_max_suppression(pred, conf_thres, iou_thres)
         t3 = time_synchronized()
 
+        # Screen dimensions
+        height = img.shape[2]
+        width = img.shape[3]
+
+        # Screen Center
+        screen_center_x = width / 2
+        screen_center_y = height / 2
+        screen_center_x, screen_center_y = int(
+            screen_center_x), int(screen_center_y)
+
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -104,21 +147,26 @@ def detect(source, weights, device, img_size, iou_thres, conf_thres):
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label,
                                  color=colors[int(cls)], line_thickness=1)
+                    c1, c2 = (int(xyxy[0]), int(xyxy[1])
+                              ), (int(xyxy[2]), int(xyxy[3]))
+                    print(c1, c2)
+
+                    xmin = c1[0]
+                    ymin = c1[1]
+                    xmax = c2[0]
+                    ymax = c2[1]
+                    center_x = (xmin + xmax)/2
+                    center_y = (ymin + ymax)/2
+                    center_x, center_y = int(center_x), int(center_y)
+
+                    displayArrows(xmin, ymin, xmax, ymax, center_x, center_y,
+                                  screen_center_x, screen_center_y, width, height, im0)
 
             # Print time (inference + NMS)
             #print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
 
-        # Display target box rectangle
+        # ---------  Display target box rectangle -------------
 
-        # Screen dimensions
-        height = img.shape[2]
-        width = img.shape[3]
-
-        # Screen Center
-        screen_center_x = width / 2
-        screen_center_y = height / 2
-        screen_center_x, screen_center_y = int(
-            screen_center_x), int(screen_center_y)
         cv2.rectangle(im0, (screen_center_x-100, screen_center_y-100),
                       (screen_center_x+100, screen_center_y+100), (0, 255, 0), 3)
 
