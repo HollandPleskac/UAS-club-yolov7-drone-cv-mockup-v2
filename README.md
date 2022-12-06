@@ -1,0 +1,1 @@
+# UAS-club-yolov7-drone-cv-mockup-v2
