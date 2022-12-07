@@ -149,7 +149,6 @@ def detect(source, weights, device, img_size, iou_thres, conf_thres):
                                  color=colors[int(cls)], line_thickness=1)
                     c1, c2 = (int(xyxy[0]), int(xyxy[1])
                               ), (int(xyxy[2]), int(xyxy[3]))
-                    print(c1, c2)
 
                     xmin = c1[0]
                     ymin = c1[1]
